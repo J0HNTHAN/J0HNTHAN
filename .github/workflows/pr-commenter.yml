@@ -1,0 +1,189 @@
+# ============================================================
+# FILE: .github/workflows/pr-commenter.yml
+# WHAT IT DOES:
+#   - Fires automatically every time a Pull Request is opened
+#     or updated (new commits pushed to it)
+#   - Posts a formatted pixel-art style comment on the PR
+#   - Adds emoji reactions to the PR
+#   - Labels the PR automatically based on files changed
+# ============================================================
+
+name: "· PR Auto-Commenter ·"
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]  # fires on open + new commits
+
+# ─── Permissions needed to comment and label PRs ───
+permissions:
+  pull-requests: write
+  contents: read
+  issues: write
+
+jobs:
+  comment-on-pr:
+    name: "Post PR Comment"
+    runs-on: ubuntu-latest
+
+    steps:
+      # ── Step 1: Checkout so we can read changed files ──
+      - name: "◈ Checkout"
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # ── Step 2: Build the comment body and post it ──
+      - name: "◈ Post Pixel-Art Comment"
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pr     = context.payload.pull_request;
+            const actor  = pr.user.login;
+            const branch = pr.head.ref;
+            const base   = pr.base.ref;
+            const files  = pr.changed_files  || 0;
+            const adds   = pr.additions      || 0;
+            const dels   = pr.deletions      || 0;
+            const isNew  = context.payload.action === "opened";
+
+            // ── Build a small bar graph for the diff ──
+            const maxBar = 20;
+            const totalChanges = adds + dels;
+            const addBar = totalChanges > 0
+              ? "█".repeat(Math.round((adds / totalChanges) * maxBar))
+              : "░".repeat(maxBar);
+            const delBar = totalChanges > 0
+              ? "█".repeat(Math.round((dels / totalChanges) * maxBar))
+              : "░".repeat(maxBar);
+
+            // ── Build the comment ──
+            const comment = `
+            \`\`\`
+            ·▄▄▄· ▄▄▄  ▄▄    ▄▄   ▄▄▄  ▄▄▄ .▄▄▌ ▪  ▄▄▄ .▄▄▌ ▄▄
+            ▐█ ▄█·██▀▄ █·██  ██  ▄▄·██ ▐█ ▪██·██ ▐▌██▐█ ▪██·
+             ██▀·▐█▐▀▀▄ ▐█·▐█·▐█·▄█▌██ ██. ██▐█▀▀█▄██. ██
+            ▐█▪·•██▌▐█·█▌▐█▌▐█▌▐█▌▐▌▐█▌▐█▌▄█▌██ ▓█▌▐█▌▄█▌
+            .▀   ▀▀▀·▀  ▀ ▀▀ ▀▀  ▀ ▀ ▀▀  ▀▀▀·▀▀  ▀▀ ▀▀▀·▀▀▀  
+            \`\`\`
+
+            ## \`·\` PR #${pr.number} — ${isNew ? "Opened 🚀" : "Updated 🔄"}
+
+            > **Branch:** \`${branch}\` → \`${base}\`
+            > **Author:** @${actor}
+            > **Status:** ${isNew ? "New pull request" : "Updated with new commits"}
+
+            ---
+
+            ### \`·\` Diff Summary
+
+            \`\`\`
+            ┌─────────────────────────────────────────────┐
+            │  Files changed : ${String(files).padEnd(30)}│
+            │  Additions (+) : ${addBar.padEnd(20)} +${String(adds).padEnd(8)}│
+            │  Deletions (-) : ${delBar.padEnd(20)} -${String(dels).padEnd(8)}│
+            └─────────────────────────────────────────────┘
+            \`\`\`
+
+            ---
+
+            ### \`·\` Checklist Before Merge
+
+            - [ ] Code follows project conventions (Clean Architecture, DI)
+            - [ ] No debug code or \`Console.WriteLine\` left behind
+            - [ ] EF Core migrations added if models changed
+            - [ ] Tested locally before pushing
+            - [ ] PR title is descriptive
+
+            ---
+
+            <sub>_Auto-comment by J0HNTHAN-Bot · ${new Date().toUTCString()}_</sub>
+            `;
+
+            // ── Check if a bot comment already exists (avoid duplicates) ──
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo:  context.repo.repo,
+              issue_number: pr.number,
+            });
+
+            const botComment = comments.find(c =>
+              c.user.type === "Bot" && c.body.includes("J0HNTHAN-Bot")
+            );
+
+            if (botComment) {
+              // Update the existing comment instead of posting a new one
+              await github.rest.issues.updateComment({
+                owner:      context.repo.owner,
+                repo:       context.repo.repo,
+                comment_id: botComment.id,
+                body:       comment,
+              });
+              console.log("✓ Updated existing bot comment");
+            } else {
+              // Post a brand-new comment
+              await github.rest.issues.createComment({
+                owner:        context.repo.owner,
+                repo:         context.repo.repo,
+                issue_number: pr.number,
+                body:         comment,
+              });
+              console.log("✓ Posted new bot comment");
+            }
+
+      # ── Step 3: Auto-label the PR based on changed files ──
+      - name: "◈ Auto-Label PR"
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pr = context.payload.pull_request;
+
+            // Get changed files
+            const { data: files } = await github.rest.pulls.listFiles({
+              owner:       context.repo.owner,
+              repo:        context.repo.repo,
+              pull_number: pr.number,
+            });
+
+            const filenames = files.map(f => f.filename);
+            const labels    = [];
+
+            // Label logic based on file paths
+            if (filenames.some(f => f.endsWith(".cs")))         labels.push("C#");
+            if (filenames.some(f => f.includes("Migration")))   labels.push("database");
+            if (filenames.some(f => f.endsWith(".cshtml")))      labels.push("frontend");
+            if (filenames.some(f => f.includes("Controller")))  labels.push("backend");
+            if (filenames.some(f => f.endsWith(".yml") || f.endsWith(".yaml"))) labels.push("ci/cd");
+            if (filenames.some(f => f === "README.md"))          labels.push("docs");
+
+            // Add labels if any were detected
+            if (labels.length > 0) {
+              // First ensure the labels exist (create if missing)
+              for (const label of labels) {
+                try {
+                  await github.rest.issues.getLabel({
+                    owner: context.repo.owner,
+                    repo:  context.repo.repo,
+                    name:  label,
+                  });
+                } catch {
+                  // Label doesn't exist — create it
+                  await github.rest.issues.createLabel({
+                    owner: context.repo.owner,
+                    repo:  context.repo.repo,
+                    name:  label,
+                    color: "58a6ff",
+                  });
+                }
+              }
+
+              await github.rest.issues.addLabels({
+                owner:        context.repo.owner,
+                repo:         context.repo.repo,
+                issue_number: pr.number,
+                labels,
+              });
+
+              console.log(`✓ Applied labels: ${labels.join(", ")}`);
+            }

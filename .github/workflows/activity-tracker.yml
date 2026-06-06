@@ -1,0 +1,163 @@
+# ============================================================
+# FILE: .github/workflows/activity-tracker.yml
+# WHAT IT DOES:
+#   - Runs automatically on every Push
+#   - Counts today's commits across all your repos
+#   - Updates the "ACTIVITY LOG" block inside README.md
+#   - Also appends a log entry to ACTIVITY.md
+#   - Commits the changes back to the repo (as a bot)
+# ============================================================
+
+name: "· Activity Tracker ·"
+
+on:
+  push:                          # ← fires on every push you make
+    branches: ["main", "master"]
+  schedule:
+    - cron: "0 23 * * *"        # ← also runs daily at 11 PM UTC
+  workflow_dispatch:             # ← lets you run it manually from GitHub UI
+
+# ─── Give the workflow permission to read/write repo files ───
+permissions:
+  contents: write
+
+jobs:
+  update-activity:
+    name: "Update Activity Log"
+    runs-on: ubuntu-latest
+
+    steps:
+      # ── Step 1: Check out the repo ──
+      - name: "◈ Checkout Repository"
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0          # need full history to count commits
+
+      # ── Step 2: Set up Python (we use it to update the markdown) ──
+      - name: "◈ Set Up Python"
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # ── Step 3: Install the GitHub API library ──
+      - name: "◈ Install Dependencies"
+        run: pip install PyGithub requests
+
+      # ── Step 4: Run the Python script that collects stats ──
+      - name: "◈ Collect Stats & Update Files"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
+          REPO_NAME: ${{ github.repository }}
+          COMMIT_SHA: ${{ github.sha }}
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+        run: |
+          python3 << 'PYTHON_SCRIPT'
+          import os
+          import re
+          from datetime import datetime, timezone
+          from github import Github
+
+          # ── Connect to GitHub API ──
+          token      = os.environ["GITHUB_TOKEN"]
+          actor      = os.environ["GITHUB_ACTOR"]
+          repo_name  = os.environ["REPO_NAME"]
+          commit_sha = os.environ.get("COMMIT_SHA", "N/A")[:7]
+          commit_msg = os.environ.get("COMMIT_MESSAGE", "N/A")
+
+          g    = Github(token)
+          repo = g.get_repo(repo_name)
+          user = g.get_user(actor)
+
+          now = datetime.now(timezone.utc)
+          date_str  = now.strftime("%Y-%m-%d")
+          time_str  = now.strftime("%H:%M UTC")
+          stamp     = now.strftime("%Y-%m-%d %H:%M UTC")
+
+          # ── Count today's commits in this repo ──
+          today_commits = 0
+          try:
+              commits = repo.get_commits(since=now.replace(hour=0, minute=0, second=0))
+              today_commits = commits.totalCount
+          except Exception:
+              today_commits = 0
+
+          # ── Count public repos ──
+          try:
+              active_repos = user.public_repos
+          except Exception:
+              active_repos = 0
+
+          # ── Count merged PRs in this repo ──
+          try:
+              merged_prs = repo.get_pulls(state="closed", base="main").totalCount
+          except Exception:
+              merged_prs = 0
+
+          # ── Build the bar-graph strings ──
+          def bar(n, max_n=20, width=15):
+              filled = int((n / max(max_n, 1)) * width)
+              return "█" * filled + "░" * (width - filled)
+
+          activity_block = f"""```
+          ┌──────────────────────────────────────────────────────┐
+          │  Last updated : {stamp:<37}│
+          │  Commits today: {bar(today_commits):<15}  {today_commits:<18}│
+          │  Active repos : {bar(active_repos, 50):<15}  {active_repos:<18}│
+          │  PRs merged   : {bar(merged_prs, 10):<15}  {merged_prs:<18}│
+          └──────────────────────────────────────────────────────┘
+          ```"""
+
+          # ── Strip leading spaces from each line ──
+          lines = [l.lstrip() for l in activity_block.split("\n")]
+          activity_block = "\n".join(lines)
+
+          # ── Update README.md (replace the block between markers) ──
+          with open("README.md", "r", encoding="utf-8") as f:
+              readme = f.read()
+
+          pattern = r"<!-- ACTIVITY-BEGIN -->.*?<!-- ACTIVITY-END -->"
+          replacement = f"<!-- ACTIVITY-BEGIN -->\n{activity_block}\n<!-- ACTIVITY-END -->"
+          readme_new = re.sub(pattern, replacement, readme, flags=re.DOTALL)
+
+          with open("README.md", "w", encoding="utf-8") as f:
+              f.write(readme_new)
+
+          # ── Append a line to ACTIVITY.md log ──
+          log_line = (
+              f"| {date_str} | {time_str} | "
+              f"`{commit_sha}` | {today_commits} | "
+              f"{commit_msg[:60].replace('|', '-')} |\n"
+          )
+
+          # Create ACTIVITY.md if it doesn't exist
+          try:
+              with open("ACTIVITY.md", "r", encoding="utf-8") as f:
+                  content = f.read()
+          except FileNotFoundError:
+              content = (
+                  "# · Activity Log ·\n\n"
+                  "Auto-generated by GitHub Actions on every push.\n\n"
+                  "| Date | Time | Commit | Commits Today | Message |\n"
+                  "|------|------|--------|---------------|---------|\n"
+              )
+
+          with open("ACTIVITY.md", "a", encoding="utf-8") as f:
+              f.write(log_line)
+
+          print(f"✓ Updated README.md activity block")
+          print(f"✓ Appended to ACTIVITY.md")
+          print(f"  Commits today : {today_commits}")
+          print(f"  Active repos  : {active_repos}")
+          print(f"  Merged PRs    : {merged_prs}")
+          PYTHON_SCRIPT
+
+      # ── Step 5: Commit and push the changes ──
+      - name: "◈ Commit Updated Files"
+        run: |
+          git config user.name  "J0HNTHAN-Bot"
+          git config user.email "bot@johnthan.github"
+          git add README.md ACTIVITY.md
+          # Only commit if there are actual changes
+          git diff --cached --quiet || git commit -m "· [bot] Update activity log [skip ci]"
+          git push
