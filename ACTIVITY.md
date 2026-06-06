@@ -17,3 +17,4 @@
 |------|------|--------|---------------|---------|
 | — | — | — | — | _Waiting for first push..._ |
 | 2026-06-06 | 14:56 UTC | `38c95f5` | 13 | Add files via upload |
+| 2026-06-06 | 14:56 UTC | `4f2b558` | 15 | Delete .github/workflows/dot |
