@@ -13,7 +13,7 @@
 · · · · · ● · ● ● · · · ● · ● · · · · ● · ● · · ● · ● · · · · ● · · · ● · · · · ● · ● ● ● ● ● ● · ● · · ● · ●
 ● · · · · ● · ● · · · · ● · ● · · · · ● · ● · · · ● ● · · · · ● · · · ● · · · · ● · ● · · · · ● · ● · · · ● ●
 · ● ● ● ● · · · ● ● ● ● · · ● · · · · ● · ● · · · · ● · · · · ● · · · ● · · · · ● · ● · · · · ● · ● · · · · ●
-                                                      J0HNTHAN
+                                                 J0HNTHAN
 ```
 
 <!-- ░░░  DOT-GRID DIVIDER  ░░░ -->
@@ -204,6 +204,24 @@ J0HNTHAN:
 
 [![GitHub Streak](https://streak-stats.demolab.com?user=J0HNTHAN&theme=github-dark-blue&hide_border=true&background=0D1117&stroke=58A6FF&ring=58A6FF&fire=FF6B6B&currStreakLabel=58A6FF)](https://git.io/streak-stats)
 
+<br/>
+
+<!-- ░░░  TROPHIES — added  ░░░ -->
+```
+· · · · · · · · · · ACHIEVEMENTS · · · · · · · · · ·
+```
+
+<img src="https://github-profile-trophy.vercel.app/?username=J0HNTHAN&theme=github_dark&no-frame=true&no-bg=true&row=1&column=7&margin-w=4" alt="Trophies"/>
+
+<br/>
+
+<!-- ░░░  CONTRIBUTION GRAPH — added  ░░░ -->
+```
+· · · · · · · · · CONTRIBUTION GRAPH · · · · · · · · ·
+```
+
+<img src="https://github-readme-activity-graph.vercel.app/graph?username=J0HNTHAN&bg_color=0d1117&color=58A6FF&line=58A6FF&point=ffffff&area=true&area_color=58A6FF&hide_border=true" alt="Contribution Graph"/>
+
 </div>
 
 <!-- ░░░  DOT DIVIDER  ░░░ -->
@@ -228,6 +246,8 @@ J0HNTHAN:
 ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
 ```
 
+</div>
+
 <!-- 
   ██  THIS SECTION IS AUTO-UPDATED BY GITHUB ACTIONS  ██
   The workflow "activity-tracker.yml" injects stats here.
@@ -238,22 +258,27 @@ J0HNTHAN:
 ```
 ┌──────────────────────────────────────────────────────┐
 │  Last updated : 2026-06-06 15:17 UTC                 │
-│  Commits today: ████████████░░░  17                │
-│  Active repos : ████░░░░░░░░░░░  14                │
-│  PRs merged   : ░░░░░░░░░░░░░░░  0                 │
+│  Commits today: ████████████░░░  17                  │
+│  Active repos : ████░░░░░░░░░░░  14                  │
+│  PRs merged   : ░░░░░░░░░░░░░░░  0                   │
 └──────────────────────────────────────────────────────┘
 ```
 <!-- ACTIVITY-END -->
 
-📋 [View full activity log →](./ACTIVITY.md)
+<!-- ░░░  RECENT EVENTS — auto-injected by update-activity.yml  ░░░ -->
+<!--RECENT_ACTIVITY:start-->
+```
+· Loading latest events . . . (auto-updates every 6 hours)
+```
+<!--RECENT_ACTIVITY:end-->
 
-</div>
+📋 [View full activity log →](./ACTIVITY.md)
 
 <!-- ░░░  CONTRIBUTION SNAKE  ░░░ -->
 <div align="center">
 
 ```
-· · · · · · · · · CONTRIBUTION GRAPH · · · · · · · · ·
+· · · · · · · · · CONTRIBUTION SNAKE · · · · · · · · ·
 ```
 
 ![Snake animation](https://github.com/J0HNTHAN/J0HNTHAN/blob/output/github-contribution-grid-snake-dark.svg)
