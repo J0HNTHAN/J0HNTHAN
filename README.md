@@ -1,4 +1,4 @@
-# Hi there, I'm Jonathan! 👋
+# Hi there, I'm Johnthan! 👋
 
 <div align="center">
   <!-- Dynamic Greeting Header -->
